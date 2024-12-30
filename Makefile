@@ -20,3 +20,6 @@ run_subdomain_report:
 
 run_get_dns_info:
 	$(GO) run main.go -action=get_dns_info -domain=$(DOMAIN)
+
+run_export_excel:
+	$(GO) run main.go -action=export_excel -file=$(FILE)

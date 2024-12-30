@@ -26,12 +26,13 @@ type Output struct {
 func main() {
 	action := flag.String("action", "", "Action to perform (e.g., subdomain_report, get_dns_info)")
 	domain := flag.String("domain", "", "Domain to process")
+	file := flag.String("file", "", "Input JSON file to process (required for export_excel)")
 	flag.Parse()
 
-	if *action == "" || *domain == "" {
-		log.Fatalf("Usage: %s -action=ACTION -domain=DOMAIN", os.Args[0])
+	if *action == "" {
+		log.Fatalf("Usage: %s -action=ACTION -domain=DOMAIN (or -file=FILE for export_excel)", os.Args[0])
 	}
-
+	
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
@@ -39,9 +40,20 @@ func main() {
 
 	switch *action {
 	case "subdomain_report":
+		if *domain == "" {
+			log.Fatalf("Domain is required for subdomain_report action")
+		}
 		runSubdomainReport(*domain, cfg)
 	case "get_dns_info":
+		if *domain == "" {
+			log.Fatalf("Domain is required for get_dns_info action")
+		}
 		getDNSInfo(*domain, cfg)
+	case "export_excel":
+		if *file == "" {
+			log.Fatalf("File is required for export_excel action")
+		}
+		exportToExcel(*file)
 	default:
 		log.Fatalf("Unknown action: %s", *action)
 	}
@@ -111,4 +123,15 @@ func getDNSInfo(domain string, cfg *config.Config) {
 
 	savePath := utils.SaveResult(domain, jsonData)
 	fmt.Printf("Results saved to: %s\n", savePath)
+}
+
+func exportToExcel(file string) {
+	fmt.Printf("Exporting JSON data from %s to Excel...\n", file)
+
+	outputFile, err := utils.ExportToExcel(file)
+	if err != nil {
+		log.Fatalf("Error exporting to Excel: %v", err)
+	}
+
+	fmt.Printf("Excel export completed successfully. File saved at: %s\n", outputFile)
 }
