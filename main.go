@@ -2,7 +2,6 @@ package main
 
 import (
 	"customer_research/config"
-	"customer_research/services/reverseip"
 	"customer_research/services/virustotal"
 	"customer_research/utils"
 	"encoding/json"
@@ -32,7 +31,7 @@ func main() {
 	if *action == "" {
 		log.Fatalf("Usage: %s -action=ACTION -domain=DOMAIN (or -file=FILE for export_excel)", os.Args[0])
 	}
-	
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
@@ -62,42 +61,15 @@ func main() {
 func runSubdomainReport(domain string, cfg *config.Config) {
 	limit := 300
 	fmt.Printf("Fetching subdomains and IPs for %s...\n", domain)
-	subdomainsWithIPs, err := virustotal.GetSubdomains(domain, cfg.VirusTotalAPIKey, limit)
+
+	result, err := virustotal.GetSubdomains(domain, cfg.VirusTotalAPIKey, limit)
 	if err != nil {
-		log.Fatalf("Error fetching subdomains and IPs: %v", err)
+		log.Fatalf("Error fetching subdomains: %v", err)
 	}
 
-	ipResults := make(map[string]IPDetail)
-	var subdomains []string
-	for subdomain, ips := range subdomainsWithIPs {
-		subdomains = append(subdomains, subdomain)
-		fmt.Printf("Resolving reverse lookup for subdomain: %s\n", subdomain)
-
-		reverseResults := []string{}
-		for _, ip := range ips {
-			reverse, err := reverseip.GetReverseIP(ip)
-			if err != nil {
-				log.Printf("Error reverse looking up IP %s for %s: %v", ip, subdomain, err)
-				continue
-			}
-			reverseResults = append(reverseResults, reverse...)
-		}
-
-		ipResults[subdomain] = IPDetail{
-			IPs:           ips,
-			ReverseLookup: reverseResults,
-		}
-	}
-
-	output := Output{
-		Domain:      domain,
-		Subdomains:  subdomains,
-		IPAddresses: ipResults,
-	}
-
-	jsonData, err := json.MarshalIndent(output, "", "  ")
+	jsonData, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
-		log.Fatalf("Error marshaling output to JSON: %v", err)
+		log.Fatalf("Error marshaling result to JSON: %v", err)
 	}
 
 	fmt.Println(string(jsonData))
