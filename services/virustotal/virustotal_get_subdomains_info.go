@@ -2,6 +2,7 @@ package virustotal
 
 import (
 	"customer_research/services/reverseip"
+	"customer_research/services/asninfo"
 	"customer_research/utils"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,9 @@ import (
 type IPDetail struct {
 	IPs           []string `json:"ips"`
 	ReverseLookup []string `json:"reverse_lookup"`
+	ASN           []string `json:"asn"`
+	Route         []string `json:"route"`
+	OrgName       []string `json:"org_name"`
 }
 
 type Output struct {
@@ -35,6 +39,7 @@ type SubdomainsResponse struct {
 	} `json:"meta"`
 }
 
+// It executes a chain of functions to get subdomain information
 func GetSubdomains(domain, apiKey string, limit int) (*Output, error) {
 	url := fmt.Sprintf("https://www.virustotal.com/api/v3/domains/%s/subdomains?limit=%d", domain, limit)
 
@@ -72,11 +77,29 @@ func GetSubdomains(domain, apiKey string, limit int) (*Output, error) {
 		}
 
 		reverseResults := resolveReverseLookups(ips)
+		asnList := []string{}
+		routeList := []string{}
+		orgNameList := []string{}
+
+		for _, ip := range ips {
+			asnDetails, err := asninfo.GetASNInfo(ip)
+			if err != nil {
+				log.Printf("Error fetching ASN info for IP %s: %v", ip, err)
+				continue
+			}
+			asnList = append(asnList, asnDetails.ASN)
+			routeList = append(routeList, asnDetails.Route)
+			orgNameList = append(orgNameList, asnDetails.OrgName)
+		}
+
 		ipResults[obj.ID] = IPDetail{
 			IPs:           ips,
 			ReverseLookup: reverseResults,
+			ASN:           asnList,
+			Route:         routeList,
+			OrgName:       orgNameList,
 		}
-
+		
 		subdomains = append(subdomains, obj.ID)
 	}
 

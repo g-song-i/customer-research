@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"github.com/xuri/excelize/v2"
 	"os"
 )
@@ -10,6 +11,9 @@ import (
 type IPDetail struct {
 	IPs           []string `json:"ips"`
 	ReverseLookup []string `json:"reverse_lookup"`
+	ASN           []string   `json:"asn"`
+	Route         []string   `json:"route"`
+	OrgName       []string   `json:"org_name"`
 }
 
 type Output struct {
@@ -34,7 +38,7 @@ func ExportToExcel(inputFile string) (string, error) {
 	sheetName := "Domain Data"
 	excel.NewSheet(sheetName)
 
-	headers := []string{"Domain", "Subdomain", "IP Addresses", "Reverse Lookup"}
+	headers := []string{"Domain", "Subdomain", "IP Addresses", "Reverse Lookup", "ASN", "Route", "Org Name"}
 	for i, header := range headers {
 		col := string('A' + i)
 		excel.SetCellValue(sheetName, col+"1", header)
@@ -42,10 +46,18 @@ func ExportToExcel(inputFile string) (string, error) {
 
 	row := 2
 	for subdomain, ipDetail := range data.IPAddresses {
+
+		asn := strings.Join(ipDetail.ASN, ", ")
+		route := strings.Join(ipDetail.Route, ", ")
+		orgName := strings.Join(ipDetail.OrgName, ", ")
+
 		excel.SetCellValue(sheetName, fmt.Sprintf("A%d", row), data.Domain)
 		excel.SetCellValue(sheetName, fmt.Sprintf("B%d", row), subdomain)
 		excel.SetCellValue(sheetName, fmt.Sprintf("C%d", row), fmt.Sprintf("%v", ipDetail.IPs))
 		excel.SetCellValue(sheetName, fmt.Sprintf("D%d", row), fmt.Sprintf("%v", ipDetail.ReverseLookup))
+		excel.SetCellValue(sheetName, fmt.Sprintf("E%d", row), asn)
+		excel.SetCellValue(sheetName, fmt.Sprintf("F%d", row), route)
+		excel.SetCellValue(sheetName, fmt.Sprintf("G%d", row), orgName)
 		row++
 	}
 

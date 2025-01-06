@@ -11,17 +11,6 @@ import (
 	"os"
 )
 
-type IPDetail struct {
-	IPs           []string `json:"ips"`
-	ReverseLookup []string `json:"reverse_lookup"`
-}
-
-type Output struct {
-	Domain      string              `json:"domain"`
-	Subdomains  []string            `json:"subdomains"`
-	IPAddresses map[string]IPDetail `json:"ip_addresses"`
-}
-
 func main() {
 	action := flag.String("action", "", "Action to perform (e.g., subdomain_report, get_dns_info)")
 	domain := flag.String("domain", "", "Domain to process")
